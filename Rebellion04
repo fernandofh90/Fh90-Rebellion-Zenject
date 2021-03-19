@@ -1,0 +1,139 @@
+using UnityEngine;
+using System.Collections;
+
+namespace Zenject.Rebellion
+{
+    public enum BulletTypes
+    {
+        FromEnemy,
+        FromPlayer
+    }
+
+    public class BulletShoot : MonoBehaviour, IPoolable<float, float, int, BulletTypes, IMemoryPool>
+    {
+        float ShootStartTime;
+        BulletTypes TypeBullet;
+        float BulletSpeed;
+        float ShootLifeTime;
+
+
+        [SerializeField]
+        public Animator shootAnimatorPlayer;
+
+        [SerializeField]
+        public Animator shootAnimatorEnemy;
+
+        [SerializeField]
+        public Animator shootImpact;
+
+        [SerializeField]
+        SpriteRenderer ShootRenderer = null;
+        
+        [SerializeField]
+        Material PlayerShootMaterial = null;
+
+        [SerializeField]
+        Material EnemyShootMaterial = null;
+
+
+        [SerializeField]
+        public CircleCollider2D shootCollider;
+
+
+        IMemoryPool ShootPool;
+        
+        public BulletTypes Type
+        {
+            get { return TypeBullet; }
+        }
+
+        public Vector2 MoveDirection
+        {
+            get { return transform.right; }
+        }
+         
+        void Start()
+        {
+            shootAnimatorPlayer = transform.Find("PlayerBullet").GetComponentInChildren<Animator>();
+            shootAnimatorEnemy = transform.Find("EnemyBullet").GetComponentInChildren<Animator>();
+            shootImpact = transform.Find("PlayerImpactEffect").GetComponentInChildren<Animator>();
+
+            shootCollider.GetComponent<CircleCollider2D>();
+        }
+
+        public void OnTriggerEnter2D(Collider2D collision)
+        {
+            if (collision.CompareTag("Finish") | collision.CompareTag("EnemyAttack1") | collision.CompareTag("EnemyAttack2")
+                | collision.CompareTag("EnemyAttack3") | collision.CompareTag("EnemyAttack4") | collision.CompareTag("EnemyAttack5")
+                | collision.CompareTag("EnemyAttack6") | collision.CompareTag("EnemyAttack7") | collision.CompareTag("EnemyAttack8")
+                | collision.CompareTag("EnemyAttack9") | collision.CompareTag("EnemyAttack10") | collision.CompareTag("EnemyAttack11")
+                | collision.CompareTag("EnemyAttack12") | collision.CompareTag("EnemyAttack13") | collision.CompareTag("SpearStay1")
+                | collision.CompareTag("SpearStay2") | collision.CompareTag("SpearStay3"))
+            {
+                StartCoroutine(ImpactEffect());
+            }
+        }
+        
+        public void Update()
+        {
+            transform.position += transform.right * BulletSpeed * Time.deltaTime;
+            
+            if (Time.realtimeSinceStartup - ShootStartTime > ShootLifeTime)
+            {
+                StartCoroutine(ImpactEffect());
+            }
+        }
+
+        public void OnSpawned(float speed, float lifeTime, int animFloat, BulletTypes type, IMemoryPool pool)
+        {
+            ShootPool = pool;
+            TypeBullet = type;
+            BulletSpeed = speed;
+            ShootLifeTime = lifeTime;
+
+            ShootRenderer.material = type == BulletTypes.FromEnemy ? EnemyShootMaterial : PlayerShootMaterial;
+
+            if (type == BulletTypes.FromPlayer)
+            {
+                shootAnimatorPlayer.SetInteger("Level", animFloat);
+                transform.Find("PlayerBullet").GetComponentInChildren<SpriteRenderer>().enabled = true;
+                transform.Find("EnemyBullet").GetComponentInChildren<SpriteRenderer>().enabled = false;
+
+                shootImpact.SetInteger("Level", animFloat);
+                transform.Find("PlayerImpactEffect").GetComponentInChildren<SpriteRenderer>().enabled = false;
+            }
+            else if (type == BulletTypes.FromEnemy)
+            {
+                shootAnimatorEnemy.SetInteger("Spell", animFloat);
+                transform.Find("PlayerBullet").GetComponentInChildren<SpriteRenderer>().enabled = false;
+                transform.Find("EnemyBullet").GetComponentInChildren<SpriteRenderer>().enabled = true;
+            }
+
+            ShootStartTime = Time.realtimeSinceStartup;
+        }
+
+        IEnumerator ImpactEffect()
+        {
+            BulletSpeed = 0;
+
+            transform.Find("PlayerImpactEffect").GetComponentInChildren<SpriteRenderer>().enabled = true;
+            transform.Find("PlayerBullet").GetComponentInChildren<SpriteRenderer>().enabled = false;
+            transform.Find("EnemyBullet").GetComponentInChildren<SpriteRenderer>().enabled = false;
+                       
+            float TimerEffect = 0.5f;
+            yield return new WaitForSecondsRealtime(TimerEffect);
+
+            ShootPool.Despawn(this);
+        }
+
+        public void OnDespawned()
+        {
+
+            ShootPool = null;
+        }
+
+        public class Factory : PlaceholderFactory<float, float, int, BulletTypes, BulletShoot>
+        {
+        }
+    }
+}
