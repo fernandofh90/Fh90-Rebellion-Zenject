@@ -1,221 +1,53 @@
+using System;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Zenject.Rebellion
 {
-    public class Player
+    public class PlayerInstaller : MonoInstaller
     {
-        public Rigidbody2D myRigidBody;
-        public Animator myAnimator;
+        [SerializeField]
+        Settings mySettings = null;
 
-        public Player( Rigidbody2D rigidBody, Animator animator)
+        public override void InstallBindings()
         {
-            myAnimator = animator;
-            myRigidBody = rigidBody;
+            Container.Bind<Player>().AsSingle().WithArguments(mySettings.Rigidbody, mySettings.Animator);
+            Container.Bind<PlayerInputState>().AsSingle();
+
+            Container.BindInterfacesAndSelfTo<PlayerModifyPhysicsHandler>().AsSingle();
+            Container.BindInterfacesAndSelfTo<PlayerDamageHandler>().AsSingle();
+            Container.BindInterfacesAndSelfTo<PlayerStatsHandler>().AsSingle();
+            Container.BindInterfacesAndSelfTo<PlayerGui>().AsSingle().WithArguments(mySettings.Life, mySettings.Mana,
+                mySettings.Health, mySettings.Power, mySettings.Progress);
+
+            Container.BindInterfacesTo<PlayerRecoverLifeWatcher>().AsSingle();
+            Container.BindInterfacesTo<PlayerRecoverManaWatcher>().AsSingle();
+            Container.BindInterfacesTo<PlayerDirectionHandler>().AsSingle();
+            Container.BindInterfacesTo<PlayerHealthWatcher>().AsSingle();
+            Container.BindInterfacesTo<PlayerStatsWatcher>().AsSingle();
+            Container.BindInterfacesTo<PlayerShootHandler>().AsSingle();
+            Container.BindInterfacesTo<PlayerInputHandler>().AsSingle();
+            Container.BindInterfacesTo<PlayerMoveHandler>().AsSingle();
+
+            Container.BindInterfacesTo<ShootEffectsHandler>().AsSingle();
+
+            Container.Bind<GameShopHandler>().AsSingle();
+            Container.BindInterfacesAndSelfTo<GameShopWatcher>().AsSingle();
+
+            Container.Bind<QuestsHandler>().AsSingle();
+            Container.BindInterfacesAndSelfTo<QuestsWatcher>().AsSingle();
         }
 
-        private float myMaxHealth;
-        public float MaxHealth
+        [Serializable]
+        public class Settings
         {
-            get { return myMaxHealth; }
-            set { myMaxHealth = value; }
-        }
-
-        private float myHealth;
-        public float Health
-        {
-            get { return myHealth; }
-            set { myHealth = value; }
-        }
-        
-        private float myPotionLife;
-        public float PotionLife
-        {
-            get { return myPotionLife; }
-            set { myPotionLife = value; }
-        }
-
-        private float myPower;
-        public float Power
-        {
-            get { return myPower; }
-            set { myPower = value; }
-        }
-        
-        private float myMaxMana;
-        public float MaxMana
-        {
-            get { return myMaxMana; }
-            set { myMaxMana = value; }
-        }
-
-        private float myMana;
-        public float Mana
-        {
-            get { return myMana; }
-            set { myMana = value; }
-        }
-        
-        private float myPotionMana;
-        public float PotionMana
-        {
-            get { return myPotionMana; }
-            set { myPotionMana = value; }
-        }      
-
-        public bool IsDead { get; set; }
-        
-        public bool OnGround { get; set; }
-        
-        public bool FacingRight { get; set; }
-        
-        public int InputDirection { get; set; }
-        
-        public Vector2 MoveDirection { get; set; }         
-                
-        public float JumpTimer { get; set; }
-         
-        public bool JumpButton { get; set; }
-
-        public float JumpDelay = 0.25f;
-
-        public bool Basic1 { get; set; }
-        public bool Paladino2 { get; set; }
-        public bool Paladino3 { get; set; }
-        public bool Sombrio2 { get; set; }
-        public bool Sombrio3 { get; set; }
-        public bool Pecado1 { get; set; }
-        public bool Pecado2 { get; set; }
-        public bool Attack1 { get; set; }
-        public bool Attack2 { get; set; }
-        public bool Attack3 { get; set; }
-        public bool Attack4 { get; set; }
-        public bool Attack5 { get; set; }
-        public int PlayerAttackLevel { get; set; }
-
-        public int PlayerHealthLevel { get; set; }
-
-        public int PlayerPotionLifeLevel { get; set; }
-
-        public int PlayerManaLevel { get; set; }
-        public int PlayerPotionManaLevel { get; set; }
-
-        public int PlayerShootTimerLevel { get; set; }
-
-        public bool PlayerBuyAttack1 { get; set; }
-        public bool PlayerBuyAttack2 { get; set; }
-        public bool PlayerBuyAttack3 { get; set; }
-        public bool PlayerBuyAttack4 { get; set; }
-        public bool PlayerBuyAttack5 { get; set; }
-        public bool PlayerBuyAttack6 { get; set; }
-        public bool PlayerBuyAttack7 { get; set; }
-        public bool PlayerBuyAttack8 { get; set; }
-        public bool PlayerBuyAttack9 { get; set; }
-        public bool PlayerBuyAttack10 { get; set; }
-        public bool PlayerLifePathChoicePaladino { get; set; }
-        public bool PlayerLifePathChoiceSombrio { get; set; }
-
-        public bool PlayerBuyHealth1 { get; set; }
-        public bool PlayerBuyHealth2 { get; set; }
-        public bool PlayerBuyHealth3 { get; set; }
-        public bool PlayerBuyHealth4 { get; set; }
-        public bool PlayerBuyHealth5 { get; set; }
-        public bool PlayerBuyHealth6 { get; set; }
-        public bool PlayerBuyHealth7 { get; set; }
-        public bool PlayerBuyHealth8 { get; set; }
-        public bool PlayerBuyHealth9 { get; set; }
-        public bool PlayerBuyHealth10 { get; set; }
-        public bool PlayerBuyHealth11 { get; set; }
-        public bool PlayerBuyHealth12 { get; set; }
-        public bool PlayerBuyHealth13 { get; set; }
-        public bool PlayerBuyHealth14 { get; set; }
-        public bool PlayerBuyHealth15 { get; set; }
-
-        public bool PlayerBuyMana1 { get; set; }
-        public bool PlayerBuyMana2 { get; set; }
-        public bool PlayerBuyMana3 { get; set; }
-        public bool PlayerBuyMana4 { get; set; }
-        public bool PlayerBuyMana5 { get; set; }
-
-        public bool PlayerBuyPotionLife1 { get; set; }
-        public bool PlayerBuyPotionLife2 { get; set; }
-        public bool PlayerBuyPotionLife3 { get; set; }
-        public bool PlayerBuyPotionLife4 { get; set; }
-        public bool PlayerBuyPotionLife5 { get; set; }
-
-        public bool PlayerBuyPotionMana1 { get; set; }
-        public bool PlayerBuyPotionMana2 { get; set; }
-        public bool PlayerBuyPotionMana3 { get; set; }
-        public bool PlayerBuyPotionMana4 { get; set; }
-        public bool PlayerBuyPotionMana5 { get; set; }
-
-        public bool PlayerBuyDelayShoot1 { get; set; }
-        public bool PlayerBuyDelayShoot2 { get; set; }
-        public bool PlayerBuyDelayShoot3 { get; set; }
-        public bool PlayerBuyDelayShoot4 { get; set; }
-        public bool PlayerBuyDelayShoot5 { get; set; }
-
-        public Vector2 Position
-        {
-            get { return myRigidBody.position; }
-            set { myRigidBody.position = value; }
-        }
-
-        public Vector2 Velocity
-        {
-            get { return myRigidBody.velocity; }
-            set { myRigidBody.velocity = value; }
-        }        
-
-        public void TakeDamage(float healthLoss)
-        {
-            myHealth = Mathf.Max(0.0f, myHealth - healthLoss);
-        }
-
-        public void RecoverMyLife(float healthHealing)
-        {
-            myHealth = Mathf.Max(0.0f, myHealth + healthHealing);
-        }
-
-        public void ConsumingMana(float attackPower)
-        {
-            myMana = Mathf.Max(0.0f, myMana - attackPower);
-        }
-
-        public void RecoverMyMana(float manaReacovering)
-        {
-            myMana = Mathf.Max(0.0f, myMana + manaReacovering);
-        }
-
-        public void AddForce(Vector2 force)
-        {
-            myRigidBody.AddForce(force);
-        }
-
-        public void Flip()
-        {
-            FacingRight = !FacingRight;
-            myRigidBody.transform.rotation = Quaternion.Euler(0, FacingRight ? 0 : 180, 0);
-        }
-
-        public void LoadPlayerModel1(SaveData1 data)
-        {
-            myRigidBody.transform.position = new Vector2(data.MyPlayerData1.MainPositionX, data.MyPlayerData1.MainPositionY);
-            ...
-            All Saved Data
-        }
-
-        public void LoadPlayerModel2(SaveData2 data)
-        {
-            myRigidBody.transform.position = new Vector2(data.MyPlayerData2.MainPositionX, data.MyPlayerData2.MainPositionY);
-            ...
-            All Saved Data
-        }
-
-        public void LoadPlayerModel3(SaveData3 data)
-        {
-            myRigidBody.transform.position = new Vector2(data.MyPlayerData3.MainPositionX, data.MyPlayerData3.MainPositionY);
-            ...
-            All Saved Data
+            public Rigidbody2D Rigidbody;
+            public Animator Animator;
+            public Image Life;
+            public Image Mana;
+            public Text Health;
+            public Text Power;
+            public Text Progress;
         }
     }
 }
