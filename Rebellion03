@@ -1,0 +1,77 @@
+using System;
+using UnityEngine;
+
+namespace Zenject.Rebellion
+{
+    public class PlayerModifyPhysicsHandler : IFixedTickable
+    {
+        readonly Settings mySettings;
+        readonly Player myPlayer;
+        readonly PlayerFacade myPlayerFacade;
+
+        public PlayerModifyPhysicsHandler(Settings settings, Player player, PlayerFacade playerFacade)
+        {
+            myPlayerFacade = playerFacade;
+            myPlayer = player;
+            mySettings = settings;
+        }
+
+        public void FixedTick()
+        {
+            bool changingDirections = (myPlayer.MoveDirection.x > 0 && myPlayer.Velocity.x < 0)
+                || (myPlayer.MoveDirection.x < 0 && myPlayer.Velocity.x > 0);
+
+            if (myPlayer.OnGround)
+            {
+                if (Mathf.Abs(myPlayer.InputDirection) > 0 || changingDirections)
+                {
+                    myPlayer.myRigidBody.drag = 0.0f;
+                    if (Mathf.Abs(myPlayer.Velocity.x) > 0.15f)
+                    {
+                        myPlayerFacade.FootSteps.SetActive(true);
+                    }
+                }
+                else
+                {
+                    myPlayer.myRigidBody.drag = 10.0f;
+                    myPlayerFacade.FootSteps.SetActive(false);
+                }
+                myPlayer.myRigidBody.gravityScale = 2.0f;
+            }
+            else
+            {
+                myPlayerFacade.FootSteps.SetActive(false);
+                myPlayer.myRigidBody.gravityScale = mySettings.Gravity;
+                myPlayer.myRigidBody.drag = mySettings.LinearDrag * 0.025f;
+                if (myPlayer.myRigidBody.velocity.y < 0)
+                {
+                    myPlayer.myRigidBody.gravityScale = (mySettings.Gravity + 0.5f) * mySettings.FallMultiplier;
+                }
+                else if (myPlayer.Velocity.y > 0)
+                {
+                    myPlayer.myRigidBody.gravityScale = mySettings.Gravity * (mySettings.FallMultiplier / mySettings.JumpDownForce);
+                }
+            }
+        }
+
+        public void Jump()
+        {
+            AudioHandler.PlaySound("JumpSound");
+
+            myPlayer.Velocity = new Vector2(myPlayer.Velocity.x, 0);
+            myPlayer.myRigidBody.AddForce(Vector2.up * mySettings.Jumpforce, ForceMode2D.Impulse);
+
+            myPlayer.JumpButton = false;
+        }
+
+        [Serializable]
+        public class Settings
+        {
+            public float Jumpforce;
+            public float JumpDownForce;
+            public float LinearDrag = 4.0f;
+            public float Gravity = 1.0f;
+            public float FallMultiplier = 5.0f;
+        }
+    }
+}
